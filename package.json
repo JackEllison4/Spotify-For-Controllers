@@ -23,7 +23,7 @@
     "linux",
     "10-foot-ui"
   ],
-  "author": "",
+  "author": "JackEllison4",
   "license": "MIT",
   "devDependencies": {
     "electron": "^28.3.3",
@@ -62,6 +62,7 @@
         "AppImage",
         "deb"
       ],
+      "maintainer": "JackEllison4 <JackEllison4@users.noreply.github.com>",
       "icon": "assets/icon.png",
       "category": "Audio"
     },
