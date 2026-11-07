@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spotify for Controllers</title>
+  <link rel="icon" type="image/png" href="assets/icon.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Login Screen -->
+  <div id="screen-login" class="screen">
+    <div class="login-container">
+      <div class="spotify-logo">🎵</div>
+      <h1>Spotify for Controllers</h1>
+      <p class="tagline">Control Spotify with your Xbox controller anywhere</p>
+
+      <!-- Client ID Configuration Box -->
+      <div class="client-id-box" id="client-id-container">
+        <label for="client-id-input" class="client-id-label">Spotify Developer Client ID:</label>
+        <input id="client-id-input" type="text" placeholder="Paste your Client ID here" class="client-id-input" autocomplete="off" spellcheck="false">
+        <button id="btn-save-client-id" class="save-client-btn focused">Save &amp; Sign In</button>
+        <div class="controller-login-hint">Press <span class="btn-badge btn-a inline-badge">A</span> or Enter to Sign In</div>
+        <div class="redirect-uri-info">
+          Add this Redirect URI in your Spotify App Settings:<br>
+          <code id="redirect-uri-badge">spotifyxbox://callback</code>
+        </div>
+      </div>
+
+      <!-- Hidden stubs to keep any legacy references safe -->
+      <input id="callback-url-input" type="hidden">
+      <button id="btn-submit-callback" style="display:none"></button>
+      <button id="btn-login" style="display:none"></button>
+    </div>
+  </div>
+
+  <!-- Home Screen -->
+  <div id="screen-home" class="screen hidden">
+    <div class="screen-header">
+      <div class="header-left">
+        <h2>Home</h2>
+      </div>
+      <div class="header-status-group">
+        <div class="device-status-badge device-indicator-btn" id="home-device-status" title="Active Spotify Connect Device">
+          <span class="device-icon">📱</span>
+          <span id="home-device-name">No Device</span>
+        </div>
+        <div class="controller-status" id="controller-status">🎮 No controller detected</div>
+      </div>
+    </div>
+    <div class="menu-grid" id="home-menu">
+      <div class="menu-item" data-screen="nowPlaying">
+        <span class="menu-icon">🎵</span>
+        <span class="menu-text">Now Playing</span>
+      </div>
+      <div class="menu-item menu-item-liked" data-screen="liked">
+        <span class="menu-icon">❤️</span>
+        <span class="menu-text">Liked Songs</span>
+      </div>
+      <div class="menu-item" data-screen="playlists">
+        <span class="menu-icon">📋</span>
+        <span class="menu-text">Playlists</span>
+      </div>
+      <div class="menu-item" data-screen="search">
+        <span class="menu-icon">🔍</span>
+        <span class="menu-text">Search</span>
+      </div>
+      <div class="menu-item" data-screen="queue">
+        <span class="menu-icon">🎶</span>
+        <span class="menu-text">Queue</span>
+      </div>
+      <div class="menu-item" data-screen="artists">
+        <span class="menu-icon">🎤</span>
+        <span class="menu-text">Top Artists</span>
+      </div>
+      <div class="menu-item" data-screen="albums">
+        <span class="menu-icon">💿</span>
+        <span class="menu-text">Albums</span>
+      </div>
+      <div class="menu-item" data-screen="devices">
+        <span class="menu-icon">📱</span>
+        <span class="menu-text">Devices</span>
+      </div>
+      <div class="menu-item" data-screen="signout">
+        <span class="menu-icon">🚪</span>
+        <span class="menu-text">Sign Out</span>
+      </div>
+    </div>
+    <!-- Jump Back In / Recently Played row rendered here dynamically -->
+  </div>
+
+  <!-- Now Playing Screen -->
+  <div id="screen-nowPlaying" class="screen hidden">
+    <div class="now-playing-full">
+      <div class="album-art-large">
+        <img id="np-album-art" src="" alt="Album Art">
+      </div>
+      <div class="track-info-large">
+        <div class="track-name-large" id="np-track-name">Not Playing</div>
+        <div class="artist-name-large" id="np-artist-name">-</div>
+        <div class="album-name" id="np-album-name">-</div>
+        
+        <div class="progress-container">
+          <div class="progress-bar">
+            <div class="progress-fill" id="np-progress" style="width: 0%"></div>
+          </div>
+          <div class="progress-times">
+            <span id="np-time-current">0:00</span>
+            <span id="np-time-total">0:00</span>
+          </div>
+        </div>
+
+        <div class="playback-controls">
+          <span class="ctrl-hint"><span class="btn-badge">LB</span> Prev</span>
+          <span class="ctrl-hint"><span class="btn-badge btn-a">A</span> Play/Pause</span>
+          <span class="ctrl-hint"><span class="btn-badge">RB</span> Next</span>
+          <span class="ctrl-hint"><span class="btn-badge btn-x">X</span> Like</span>
+          <span class="ctrl-hint"><span class="btn-badge btn-y">Y</span> Shuffle</span>
+        </div>
+
+        <div class="playback-meta">
+          <span id="np-shuffle-state">Shuffle: Off</span>
+          <span class="meta-dot">•</span>
+          <span id="np-repeat-state">Repeat: Off</span>
+          <span class="meta-dot">•</span>
+          <span id="np-volume">Volume: 50%</span>
+          <span class="meta-dot">•</span>
+          <span id="np-liked" class="liked-badge">❤️</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Playlists Screen -->
+  <div id="screen-playlists" class="screen hidden">
+    <div class="screen-header">
+      <div class="screen-title-area">
+        <h2 id="playlists-header-title">📋 Playlists</h2>
+        <div class="filter-toolbar">
+          <div class="filter-group">
+            <span class="filter-label">Filter:</span>
+            <div id="btn-playlist-filter-all" class="filter-pill active" role="button" data-action="playlist-filter" data-value="all">All</div>
+            <div id="btn-playlist-filter-owned" class="filter-pill" role="button" data-action="playlist-filter" data-value="owned">Created by You</div>
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">Sort:</span>
+            <div id="btn-playlist-sort" class="filter-pill sort-pill" role="button" data-action="playlist-sort" title="Press X to cycle sort">
+              <span class="btn-badge btn-x inline-badge">X</span>
+              <span id="playlist-sort-label">Recently Added</span>
+              <span class="pill-arrow">▾</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-hint">
+        <span><span class="btn-badge btn-a">A</span> Open</span>
+        <span><span class="btn-badge btn-x">X</span> Sort</span>
+        <span><span class="btn-badge btn-y">Y</span> Filter</span>
+        <span><span class="btn-badge btn-b">B</span> Back</span>
+      </div>
+    </div>
+    <div class="list-container" id="playlists-list"></div>
+  </div>
+
+  <!-- Playlist Detail Screen -->
+  <div id="screen-playlistDetail" class="screen hidden">
+    <div class="playlist-header">
+      <img id="pd-cover" class="playlist-cover" src="https://via.placeholder.com/200?text=Playlist" alt="Playlist Cover">
+      <div class="playlist-header-meta">
+        <h2 id="pd-name">-</h2>
+        <p id="pd-desc">-</p>
+        <p id="pd-count" class="track-count">- tracks</p>
+        <div class="playlist-actions-hint">
+          <span><span class="btn-badge btn-a">A</span> Play Song</span>
+          <span><span class="btn-badge btn-b">B</span> Back to Playlists</span>
+        </div>
+      </div>
+    </div>
+    <div class="list-container" id="playlist-tracks-list"></div>
+  </div>
+
+  <!-- Liked Songs Screen -->
+  <div id="screen-liked" class="screen hidden">
+    <div class="playlist-header">
+      <div class="liked-cover-art">
+        <span class="liked-cover-heart">❤️</span>
+      </div>
+      <div class="playlist-header-meta">
+        <h2>Liked Songs</h2>
+        <p id="liked-count" class="track-count">Loading your liked songs...</p>
+        <div class="playlist-actions-hint">
+          <span><span class="btn-badge btn-a">A</span> Play Song</span>
+          <span><span class="btn-badge btn-x">X</span> Unlike</span>
+          <span><span class="btn-badge btn-b">B</span> Back</span>
+        </div>
+      </div>
+    </div>
+    <div class="list-container" id="liked-tracks-list"></div>
+  </div>
+
+  <!-- Search Screen -->
+  <div id="screen-search" class="screen hidden">
+    <div class="screen-header">
+      <h2>🔍 Search</h2>
+      <div class="screen-hint">Press <span class="btn-badge btn-b">B</span> to return</div>
+    </div>
+    <div class="search-box-container">
+      <input id="search-input" type="text" placeholder="Search songs, artists, albums..." class="search-input">
+      <div class="keyboard-hint">Type with your physical keyboard and press Enter to search</div>
+    </div>
+    <div id="search-results" class="list-container"></div>
+  </div>
+
+  <!-- Queue Screen -->
+  <div id="screen-queue" class="screen hidden">
+    <div class="screen-header">
+      <h2>🎶 Queue</h2>
+      <div class="screen-hint">Press <span class="btn-badge btn-b">B</span> to go back</div>
+    </div>
+    <div class="list-container" id="queue-list"></div>
+  </div>
+
+  <!-- Artists Screen -->
+  <div id="screen-artists" class="screen hidden">
+    <div class="screen-header">
+      <h2>🎤 Top Artists</h2>
+      <div class="screen-hint">Press <span class="btn-badge btn-a">A</span> to view artist, <span class="btn-badge btn-b">B</span> to go back</div>
+    </div>
+    <div class="grid-container" id="artists-grid"></div>
+  </div>
+
+  <!-- Artist Detail Screen -->
+  <div id="screen-artistDetail" class="screen hidden">
+    <div class="artist-header">
+      <img id="ad-cover" class="artist-cover round" src="https://via.placeholder.com/200?text=Artist" alt="Artist Cover">
+      <div class="artist-header-meta">
+        <h2 id="ad-name">-</h2>
+        <p id="ad-genres" class="artist-genres">-</p>
+        <p id="ad-followers" class="artist-followers">-</p>
+        <div class="artist-actions-hint">
+          <span><span class="btn-badge btn-a">A</span> Play / Select</span>
+          <span><span class="btn-badge btn-b">B</span> Back to Artists</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="artist-sections">
+      <div class="artist-section">
+        <h3 class="section-title">Popular Songs</h3>
+        <div class="list-container" id="artist-tracks-list"></div>
+      </div>
+      
+      <div class="artist-section">
+        <h3 class="section-title">Albums & Singles</h3>
+        <div class="grid-container" id="artist-albums-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Albums Screen -->
+  <div id="screen-albums" class="screen hidden">
+    <div class="screen-header">
+      <div class="screen-title-area">
+        <h2 id="albums-header-title">💿 Saved Albums</h2>
+        <div class="filter-toolbar">
+          <div class="filter-group">
+            <span class="filter-label">Sort:</span>
+            <div id="btn-album-sort" class="filter-pill sort-pill" role="button" data-action="album-sort" title="Press X to cycle sort">
+              <span class="btn-badge btn-x inline-badge">X</span>
+              <span id="album-sort-label">Recently Added</span>
+              <span class="pill-arrow">▾</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="screen-hint">
+        <span><span class="btn-badge btn-a">A</span> Play</span>
+        <span><span class="btn-badge btn-x">X</span> Sort</span>
+        <span><span class="btn-badge btn-b">B</span> Back</span>
+      </div>
+    </div>
+    <div class="grid-container" id="albums-grid"></div>
+  </div>
+
+  <!-- Now Playing Bar (bottom, always visible except login and nowPlaying screens) -->
+  <div id="now-playing-bar" class="now-playing-bar hidden">
+    <img id="bar-art" src="https://via.placeholder.com/80?text=Spotify" alt="" class="bar-art">
+    <div class="bar-info">
+      <div class="bar-track" id="bar-track">Not Playing</div>
+      <div class="bar-artist" id="bar-artist">Select a track to start playback</div>
+    </div>
+    <div class="bar-controls">
+      <div class="bar-device-btn device-indicator-btn" id="bar-device" title="Spotify Connect Devices">
+        <span class="device-icon">📱</span>
+        <span id="bar-device-name">No Device</span>
+      </div>
+      <span id="bar-play-state" class="bar-play-icon">⏸</span>
+      <div class="volume-indicator">🔊 <span id="bar-volume">50%</span></div>
+      <div class="bar-guide-hint"><span class="btn-badge">Select</span> Guide</div>
+    </div>
+  </div>
+
+  <!-- Device Selection Modal -->
+  <div id="device-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>📱 Spotify Connect Devices</h3>
+        <button id="btn-close-device-modal" class="modal-close-btn" title="Close">✕</button>
+      </div>
+      <p class="modal-subtitle">Select which device should play your Spotify music:</p>
+      
+      <div id="device-list" class="device-list">
+        <!-- Populated dynamically with available devices -->
+      </div>
+
+      <div class="device-modal-footer">
+        <button id="btn-refresh-devices" class="modal-action-btn">🔄 Refresh Devices</button>
+        <button id="btn-open-spotify-app" class="modal-action-btn secondary">🎧 Launch Spotify App</button>
+        <button id="btn-open-web-player" class="modal-action-btn secondary">🌐 Open Web Player</button>
+      </div>
+
+      <div class="device-help-tip">
+        💡 <strong>How it works:</strong> Spotify Connect requires an open Spotify player (Desktop App, Phone, Web Player, or Xbox). Once Spotify is open, it appears here and can be controlled with this app!
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notifications -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- Loading overlay -->
+  <div id="loading" class="loading hidden">
+    <div class="spinner"></div>
+    <div class="loading-text">Loading...</div>
+  </div>
+
+  <!-- Controller guide (toggle with Select) -->
+  <div id="controller-guide" class="controller-guide hidden">
+    <div class="guide-header">
+      <h3>🎮 Xbox Controller Guide</h3>
+      <span class="guide-close-hint">Press <span class="btn-badge btn-b">B</span> or <span class="btn-badge">Select</span> to close</span>
+    </div>
+    <table class="guide-table">
+      <tr><td><span class="btn-badge btn-a">A</span></td><td>Confirm / Select / Play-Pause</td></tr>
+      <tr><td><span class="btn-badge btn-b">B</span></td><td>Back / Return to Previous Screen</td></tr>
+      <tr><td><span class="btn-badge btn-x">X</span></td><td>Like Song (or Cycle Sort on Playlists & Albums)</td></tr>
+      <tr><td><span class="btn-badge btn-y">Y</span></td><td>Toggle Shuffle (or Filter Playlists by Owner)</td></tr>
+      <tr><td><span class="btn-badge">LB</span></td><td>Previous Track</td></tr>
+      <tr><td><span class="btn-badge">RB</span></td><td>Next Track</td></tr>
+      <tr><td><span class="btn-badge">LT</span></td><td>Volume Down (Hold for continuous)</td></tr>
+      <tr><td><span class="btn-badge">RT</span></td><td>Volume Up (Hold for continuous)</td></tr>
+      <tr><td><span class="btn-badge">L-Stick / R-Stick ↕</span></td><td>Smooth Analog Scroll Lists &amp; Pages</td></tr>
+      <tr><td><span class="btn-badge">D-Pad</span></td><td>Step Navigate Menus, Lists &amp; Grids</td></tr>
+      <tr><td><span class="btn-badge">D-Pad ◄ / ►</span></td><td>Page Up / Page Down (Skip 6 songs in Lists)</td></tr>
+      <tr><td><span class="btn-badge">Start</span></td><td>Jump to Search</td></tr>
+      <tr><td><span class="btn-badge">Select</span></td><td>Toggle this Controller Guide</td></tr>
+    </table>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="spotify.js"></script>
+  <script src="controller.js"></script>
+  <script src="ui.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
+

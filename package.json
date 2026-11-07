@@ -1,0 +1,75 @@
+{
+  "name": "spotify-for-controllers",
+  "version": "1.0.0",
+  "description": "TV & browser Spotify client controlled entirely with a gamepad (Xbox controller)",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "serve": "npx serve .",
+    "build": "electron-builder --win",
+    "build:portable": "electron-builder --win portable",
+    "build:dir": "electron-builder --dir",
+    "build:linux": "electron-builder --linux AppImage deb",
+    "build:all": "electron-builder -wl"
+  },
+  "keywords": [
+    "spotify",
+    "xbox",
+    "controller",
+    "gamepad",
+    "electron",
+    "web",
+    "tv",
+    "linux",
+    "10-foot-ui"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.spotifyforcontrollers.app",
+    "productName": "SpotifyForControllers",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "index.html",
+      "style.css",
+      "app.js",
+      "spotify.js",
+      "controller.js",
+      "ui.js",
+      "config.js",
+      "main.js",
+      "preload.js",
+      "package.json",
+      "assets/**"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "assets/icon.png",
+      "category": "Audio"
+    },
+    "protocols": {
+      "name": "SpotifyXbox Protocol",
+      "schemes": [
+        "spotifyxbox"
+      ]
+    }
+  }
+}
